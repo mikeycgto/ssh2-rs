@@ -219,6 +219,30 @@ impl Session {
         })
     }
 
+    /// Attempt public key authentication using both the public and private keys
+    /// stored in memory
+    pub fn userauth_pubkey_and_privatekey(&self,
+                                username: &str,
+                                pubkey: &str,
+                                privatekey: &str,
+                                passphrase: Option<&str>) -> Result<(), Error> {
+        let passphrase = match passphrase {
+            Some(s) => Some(try!(CString::new(s))),
+            None => None,
+        };
+        self.rc(unsafe {
+            raw::libssh2_userauth_publickey_frommemory(self.raw,
+                    username.as_ptr() as *const _,
+                    username.len() as c_uint,
+                    pubkey.as_ptr() as *const _,
+                    pubkey.len() as c_uint,
+                    privatekey.as_ptr() as *const _,
+                    privatekey.len() as c_uint,
+                    passphrase.as_ref().map(|s| s.as_ptr())
+                              .unwrap_or(0 as *const _))
+        })
+    }
+
     // Umm... I wish this were documented in libssh2?
     #[allow(missing_docs)]
     pub fn userauth_hostbased_file(&self,
